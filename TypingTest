@@ -46,13 +46,9 @@ func load_file():
 
 func _on_Back_pressed():
 	get_tree().change_scene("res://TextSelect.tscn")
-	print(Global.currentlevel)
-	print(Global.level)
 	if int(Global.currentlevel) == int(Global.level):
 		Global.level = int(Global.level) + 1
-	print (Global.level)
 		
-
 func _on_Retry_pressed():
 	userText = ""
 	time = 0
