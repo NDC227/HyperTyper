@@ -4,7 +4,7 @@ extends Node
 # Declare member variables here. Examples:
 var shelfIndex = Global.shelf
 var shelfMax = 10
-var level = 0
+#var level = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -30,6 +30,7 @@ func _ready():
 	$Shelves/WarToZ.get_popup().connect("id_pressed", self, "_on_item_pressed")
 	getShelf()
 	loadGame()
+	saveGame()
 	
 func goToTest(text):
 	Global.text = text
@@ -327,21 +328,17 @@ func saveGame():
 func loadGame():
 	if Global.level == null:
 		var save_game = File.new()
-		# We need to revert the game state so we're not cloning objects
-		# during loading. This will vary wildly depending on the needs of a
-		# project, so take care with this step.
-		# For our example, we will accomplish this by deleting saveable objects.
 		var save_nodes = get_tree().get_nodes_in_group("Save")
-		for i in save_nodes:  #Do I need this?
-			i.queue_free()
+		#for i in save_nodes:  #Do I need this?
+		#	i.queue_free()
 
 		# Load the file line by line and process that dictionary to restore
 		# the object it represents.
 		save_game.open("user://savegame.save", File.READ)
 		var node_data = parse_json(save_game.get_line())
-		print(node_data["level"])
 		Global.level = str(node_data["level"])
 		save_game.close()
+	updateDisabled()
 	$Control/Level.text = "Level: " + str(Global.level)
 
 func save():
@@ -350,6 +347,28 @@ func save():
 	}
 	return save_dict
 
+func updateDisabled():
+	Global.level = int(Global.level)
+	for i in range (0, Global.level):
+		$Shelves/AToCh.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 11):
+		$Shelves/ClToFa.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 20):
+		$Shelves/FrToHe.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 30):
+		$Shelves/HiToJun.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 40):
+		$Shelves/JunToL.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 50):
+		$Shelves/MToN.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 60):
+		$Shelves/OToR.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 70):
+		$Shelves/SToT.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 81):
+		$Shelves/ToToWal.get_popup().set_item_disabled(i, false)
+	for i in range (0, Global.level - 91):
+		$Shelves/WarToZ.get_popup().set_item_disabled(i, false)
 
 func _on_Up_pressed():
 	Global.level = int(Global.level) + 1
