@@ -1,0 +1,111 @@
+extends Node
+
+
+# Declare member variables here. Examples:
+var file = "res://Texts/WotW2.txt"
+var title = ""
+var text = ""
+var userText = ""
+var time = 0
+var words = 0
+var mistakes = 0
+var countdown = 1
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	file = Global.text
+	load_file()
+	$TestUI/Control/Title.text = ""
+	$TestUI/Control/Title.append_bbcode("[center]%s[/center]" %title)
+	$TestUI/Control/Text.text = text
+	$TestResults.hide()
+	$TestUI/Control/Typing.hide()
+	$TestUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
+	$TestResults/Control/Back.connect("pressed", self, "_on_Back_pressed")
+	$TestResults/Control/Retry.connect("pressed", self, "_on_Retry_pressed")
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	if Input.is_action_just_pressed("ui_backspace") and $UserText.readonly == true:
+		$UserText.readonly = false
+		$UserText.text = $UserText.text.substr(0, $UserText.text.length()-1)
+		$TextOverlay.text = $UserText.text
+		$UserText.show_behind_parent = false
+		$UserText.cursor_set_column($UserText.text.length())
+
+func load_file():
+	var f = File.new()
+	f.open(file, File.READ)
+	title = f.get_line()
+	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+		var line = f.get_line()
+		line += " "
+		text += line
+	f.close()
+	return
+
+func _on_Back_pressed():
+	get_tree().change_scene("res://TextSelect.tscn")
+	print(Global.currentlevel)
+	print(Global.level)
+	if int(Global.currentlevel) == int(Global.level):
+		Global.level = int(Global.level) + 1
+	print (Global.level)
+		
+
+func _on_Retry_pressed():
+	userText = ""
+	time = 0
+	words = 0
+	mistakes = 0
+	countdown = 1
+	$UserText.readonly = false
+	$UserText.text = ""
+	$TextOverlay.text = ""
+	$TestResults.hide()
+	$TestReady.show()
+
+func _on_UserText_text_changed():
+	var index = $UserText.text.length()
+	var lastChar = $UserText.text.substr(index-1, 1)
+	var textLastChar = text.substr(index-1, 1)
+	if lastChar != textLastChar:
+		#print("you messed up")
+		mistakes += 1
+		$UserText.show_behind_parent = true
+		$UserText.readonly = true
+	if Input.is_action_pressed("ui_backspace"):
+		$TextOverlay.text = $UserText.text
+		if text.substr(index, 1) == " " or text.substr(index-1, 1) == " ":
+			words -= 1
+	else:
+		if lastChar != textLastChar:
+			if lastChar == " ":
+				$TextOverlay.append_bbcode("[color=red]_[/color]")
+			else:
+				$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
+			
+		else:
+			$TextOverlay.text += lastChar
+	if lastChar == " ":
+		words += 1
+	if index+1 == text.length():
+		$SecondTimer.stop()
+		$TestUI/Control/Typing.hide()
+		$UserText.readonly = true
+		$TestResults/Control/Words.text = str(words)
+		$TestResults/Control/Time.text = str(time)
+		$TestResults/Control/WPM.text = str(words*60/time)
+		$TestResults/Control/Mistakes.text = str(mistakes)
+		$TestResults.show()
+
+func _on_SecondTimer_timeout():
+	time += 1
+	$TestUI/Control/Time.text = str(time)
+	$TestUI/Control/WPM.text = str(words*60/time)
+
+
+func _on_UserText_focus_entered():
+	$TestReady.hide()
+	$TestUI/Control/Typing.show()
+	$SecondTimer.start()
