@@ -349,25 +349,25 @@ func save():
 
 func updateDisabled():
 	Global.level = int(Global.level)
-	for i in range (0, Global.level):
+	for i in range (0, (11 if Global.level > 11 else Global.level)):
 		$Shelves/AToCh.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 11):
+	for i in range (0, (9 if Global.level > 20 else Global.level - 11)):
 		$Shelves/ClToFa.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 20):
+	for i in range (0, (10 if Global.level > 30 else Global.level - 20)):
 		$Shelves/FrToHe.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 30):
+	for i in range (0, (10 if Global.level > 40 else Global.level - 30)):
 		$Shelves/HiToJun.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 40):
+	for i in range (0, (10 if Global.level > 50 else Global.level - 40)):
 		$Shelves/JunToL.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 50):
+	for i in range (0, (10 if Global.level > 60 else Global.level - 50)):
 		$Shelves/MToN.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 60):
+	for i in range (0, (10 if Global.level > 70 else Global.level - 60)):
 		$Shelves/OToR.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 70):
+	for i in range (0, (11 if Global.level > 81 else Global.level - 70)):
 		$Shelves/SToT.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 81):
+	for i in range (0, (10 if Global.level > 90 else Global.level - 81)):
 		$Shelves/ToToWal.get_popup().set_item_disabled(i, false)
-	for i in range (0, Global.level - 91):
+	for i in range (0, (9 if Global.level > 100 else Global.level - 91)):
 		$Shelves/WarToZ.get_popup().set_item_disabled(i, false)
 
 func _on_Up_pressed():
