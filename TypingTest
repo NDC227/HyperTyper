@@ -10,6 +10,9 @@ var time = 0
 var words = 0
 var mistakes = 0
 var countdown = 1
+var dialog = []
+
+signal toDialog
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -19,10 +22,16 @@ func _ready():
 	$TestUI/Control/Title.append_bbcode("[center]%s[/center]" %title)
 	$TestUI/Control/Text.text = text
 	$TestResults.hide()
+	$DialogueBox.hide()
 	$TestUI/Control/Typing.hide()
 	$TestUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
 	$TestResults/Control/Back.connect("pressed", self, "_on_Back_pressed")
 	$TestResults/Control/Retry.connect("pressed", self, "_on_Retry_pressed")
+	if Global.currentlevel == Global.level:
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -37,6 +46,10 @@ func load_file():
 	var f = File.new()
 	f.open(file, File.READ)
 	title = f.get_line()
+	var n = f.get_line()
+	for i in range (n):
+		dialog.append(f.get_line())
+	#print(dialog)
 	while not f.eof_reached(): # iterate through all lines until the end of file is reached
 		var line = f.get_line()
 		line += " "
