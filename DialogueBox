@@ -1,0 +1,35 @@
+extends Node2D
+
+
+# Declare member variables here. Examples:
+#var dialog = ["I've finally got you, Alo! Now give me back my last golden potato!", "Dippo? Hm...so I see you've gotten past my Robbie guards, Meatball sentries, and Wingrus scout.", "They were a piece of potato cake.", "So it seems. Unfortunately, this is the end of the road for you. Prepare to be crushed!", "Bring it on!"]
+var page = 0
+var dialog = []
+onready var textbox = $Control/Dialogue
+
+# Called when the node enters the scene tree for the first time.
+func _on_TypingTest_toDialog():
+	dialog = get_parent().dialog
+	$Timer.connect("timeout", self, "_on_Timer_timeout")
+	textbox.set_bbcode(dialog[page])
+	textbox.set_visible_characters(0)
+	textbox.set_process_input(true)
+
+func _process(delta):
+	pass
+
+func _input(event):
+	if event.is_action_pressed("ui_select"):
+		if textbox.get_visible_characters() > textbox.get_total_character_count():
+			if page < dialog.size()-1:
+				page += 1
+				textbox.set_bbcode(dialog[page])
+				textbox.set_visible_characters(0)
+			else:
+				hide()
+				get_tree().paused = false
+		else:
+			textbox.set_visible_characters(textbox.get_total_character_count())
+
+func _on_Timer_timeout():
+	textbox.set_visible_characters(textbox.get_visible_characters() + 1)
