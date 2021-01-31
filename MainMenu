@@ -2,23 +2,378 @@ extends Node
 
 
 # Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
-
+var shelfIndex = Global.shelf
+var shelfMax = 10
+#var level = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	pass
+	$Shelves/AToCh.hide()
+	$Shelves/ClToFa.hide()
+	$Shelves/FrToG.hide()
+	$Shelves/HToJun.hide()
+	$Shelves/JunToL.hide()
+	$Shelves/MToN.hide()
+	$Shelves/OToR.hide()
+	$Shelves/SToT.hide()
+	$Shelves/ToToWal.hide()
+	$Shelves/WarToZ.hide()
+	$Shelves/AToCh.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/ClToFa.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/FrToG.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/HToJun.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/JunToL.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/MToN.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/OToR.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/SToT.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/ToToWal.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	$Shelves/WarToZ.get_popup().connect("id_pressed", self, "_on_item_pressed")
+	getShelf()
+	loadGame()
+	saveGame()
+	
+func goToTest(text):
+	Global.text = text
+	get_tree().change_scene("res://TypingTest.tscn")
+	saveGame()
 
+func _on_item_pressed(ID):
+	match(ID):
+		0:
+			goToTest("res://Texts/0Preamble.txt")
+		1:
+			goToTest("res://Texts/AdventuresHF1.txt")
+		2:
+			goToTest("res://Texts/AdventuresHF2.txt")
+		3:
+			goToTest("res://Texts/Alice.txt")
+		4:
+			goToTest("res://Texts/Test.txt")
+		5:
+			goToTest("res://Texts/BraveNewWorld2.txt")
+		6:
+			goToTest("res://Texts/CallOfTheWild.txt")
+		7:
+			goToTest("res://Texts/Catch221.txt")
+		8:
+			goToTest("res://Texts/Catch222.txt")
+		9:
+			goToTest("res://Texts/CatcherInTheRye.txt")
+		10:
+			goToTest("res://Texts/ChroniclesNarnia1.txt")
+		11:
+			goToTest("res://Texts/ChroniclesNarnia2.txt")
+		12:
+			goToTest("res://Texts/Clockwork.txt")
+		13:
+			goToTest("res://Texts/DeclarationOS.txt")
+		14:
+			goToTest("res://Texts/DoctorJekyll.txt")
+		15:
+			goToTest("res://Texts/Dracula1.txt")
+		16:
+			goToTest("res://Texts/Dracula2.txt")
+		17:
+			goToTest("res://Texts/Dracula3.txt")
+		18:
+			goToTest("res://Texts/EnglishBoR.txt")
+		19:
+			goToTest("res://Texts/Fahrenheit1.txt")
+		20:
+			goToTest("res://Texts/Fahrenheit2.txt")
+		21:
+			goToTest("res://Texts/FirstFiresideChat.txt")
+		22:
+			goToTest("res://Texts/Frankenstein1.txt")
+		23:
+			goToTest("res://Texts/Frankenstein2.txt")
+		24:
+			goToTest("res://Texts/Gettysburg.txt")
+		25:
+			goToTest("res://Texts/Grapes1.txt")
+		26:
+			goToTest("res://Texts/Grapes2.txt")
+		27:
+			goToTest("res://Texts/Grapes3.txt")
+		28:
+			goToTest("res://Texts/GreatGatsby1.txt")
+		29:
+			goToTest("res://Texts/GreatGatsby2.txt")
+		30:
+			goToTest("res://Texts/Gulliver.txt")
+		31:
+			goToTest("res://Texts/HeartOfDarkness.txt")
+		32:
+			goToTest("res://Texts/HistoryOfRome.txt")
+		33:
+			goToTest("res://Texts/Hobbit1.txt")
+		34:
+			goToTest("res://Texts/Hobbit2.txt")
+		35:
+			goToTest("res://Texts/IchBinEinBerliner.txt")
+		36:
+			goToTest("res://Texts/JaneEyre1.txt")
+		37:
+			goToTest("res://Texts/JaneEyre2.txt")
+		38:
+			goToTest("res://Texts/JaneEyre3.txt")
+		39:
+			goToTest("res://Texts/JungleBook1.txt")
+		40:
+			goToTest("res://Texts/JungleBook2.txt")
+		41:
+			goToTest("res://Texts/JungleThe.txt")
+		42:
+			goToTest("res://Texts/KJB1.txt")
+		43:
+			goToTest("res://Texts/KJB2.txt")
+		44:
+			goToTest("res://Texts/KJB3.txt")
+		45:
+			goToTest("res://Texts/Leviathan1.txt")
+		46:
+			goToTest("res://Texts/Leviathan2.txt")
+		47:
+			goToTest("res://Texts/LittleWomen1.txt")
+		48:
+			goToTest("res://Texts/LittleWomen2.txt")
+		49:
+			goToTest("res://Texts/Lolita1.txt")
+		50:
+			goToTest("res://Texts/Lolita2.txt")
+		51:
+			goToTest("res://Texts/MobyDick1.txt")
+		52:
+			goToTest("res://Texts/MobyDick2.txt")
+		53:
+			goToTest("res://Texts/MrsDalloway1.txt")
+		54:
+			goToTest("res://Texts/MrsDalloway2.txt")
+		55:
+			goToTest("res://Texts/MurderOnOE.txt")
+		56:
+			goToTest("res://Texts/NarrativeOfFD1.txt")
+		57:
+			goToTest("res://Texts/NarrativeOfFD2.txt")
+		58:
+			goToTest("res://Texts/Nineteen841.txt")
+		59:
+			goToTest("res://Texts/Nineteen842.txt")
+		60:
+			goToTest("res://Texts/Nineteen843.txt")
+		61:
+			goToTest("res://Texts/OldMan.txt")
+		62:
+			goToTest("res://Texts/OriginOfSpecies1.txt")
+		63:
+			goToTest("res://Texts/OriginOfSpecies2.txt")
+		64:
+			goToTest("res://Texts/PictureOfDG1.txt")
+		65:
+			goToTest("res://Texts/PictureOfDG2.txt")
+		66:
+			goToTest("res://Texts/PrideAndP1.txt")
+		67:
+			goToTest("res://Texts/PrideAndP2.txt")
+		68:
+			goToTest("res://Texts/ReflectionsOnFR.txt")
+		69:
+			goToTest("res://Texts/RightsOfMan.txt")
+		70:
+			goToTest("res://Texts/RobinsonCrusoe.txt")
+		71:
+			goToTest("res://Texts/ScarletLetter1.txt")
+		72:
+			goToTest("res://Texts/ScarletLetter2.txt")
+		73:
+			goToTest("res://Texts/SoundAndFury.txt")
+		74:
+			goToTest("res://Texts/StudyInScarlet.txt")
+		75:
+			goToTest("res://Texts/TaleOfTC1.txt")
+		76:
+			goToTest("res://Texts/TaleOfTC2.txt")
+		77:
+			goToTest("res://Texts/TaleOfTC3.txt")
+		78:
+			goToTest("res://Texts/TearDownThisWall.txt")
+		79:
+			goToTest("res://Texts/ThingsFallApart.txt")
+		80:
+			goToTest("res://Texts/ToKillAM1.txt")
+		81:
+			goToTest("res://Texts/ToKillAM2.txt")
+		82:
+			goToTest("res://Texts/Ulysses1.txt")
+		83:
+			goToTest("res://Texts/Ulysses2.txt")
+		84:
+			goToTest("res://Texts/Ulysses3.txt")
+		85:
+			goToTest("res://Texts/UncleTom1.txt")
+		86:
+			goToTest("res://Texts/UncleTom2.txt")
+		87:
+			goToTest("res://Texts/USDoI.txt")
+		88:
+			goToTest("res://Texts/Vindication1.txt")
+		89:
+			goToTest("res://Texts/Vindication2.txt")
+		90:
+			goToTest("res://Texts/Walden1.txt")
+		91:
+			goToTest("res://Texts/Walden2.txt")
+		92:
+			goToTest("res://Texts/WarOTW1.txt")
+		93:
+			goToTest("res://Texts/WarOTW2.txt")
+		94:
+			goToTest("res://Texts/WarOTW3.txt")
+		95:
+			goToTest("res://Texts/WashingtonFA.txt")
+		96:
+			goToTest("res://Texts/WealthOfNations.txt")
+		97:
+			goToTest("res://Texts/WeShallFight.txt")
+		98:
+			goToTest("res://Texts/WizardOfOz.txt")
+		99:
+			goToTest("res://Texts/WutheringHeights1.txt")
+		100:
+			goToTest("res://Texts/WutheringHeights2.txt")
+	Global.currentlevel = ID
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+func _on_Back_pressed():
+	get_tree().change_scene("res://MainMenu.tscn")
+	saveGame()
 
+func _on_Left_pressed():
+	shelfIndex -= 1
+	getShelf()
 
-func _on_Library_pressed():
-	get_tree().change_scene("res://TextSelect.tscn")
+func _on_Right_pressed():
+	shelfIndex += 1
+	getShelf()
+		
+func getShelf():
+	if shelfIndex < 1:
+		shelfIndex = shelfMax
+	if shelfIndex > shelfMax:
+		shelfIndex = 1
+	Global.shelf = shelfIndex
+	match(shelfIndex):
+		1:
+			$Shelves/WarToZ.hide()
+			$Shelves/ClToFa.hide()
+			$Shelves/AToCh.show()
+		2:
+			$Shelves/AToCh.hide()
+			$Shelves/FrToG.hide()
+			$Shelves/ClToFa.show()
+		3:
+			$Shelves/ClToFa.hide()
+			$Shelves/HToJun.hide()
+			$Shelves/FrToG.show()
+		4:
+			$Shelves/FrToG.hide()
+			$Shelves/JunToL.hide()
+			$Shelves/HToJun.show()
+		5:
+			$Shelves/HToJun.hide()
+			$Shelves/MToN.hide()
+			$Shelves/JunToL.show()
+		6:
+			$Shelves/JunToL.hide()
+			$Shelves/OToR.hide()
+			$Shelves/MToN.show()
+		7:
+			$Shelves/MToN.hide()
+			$Shelves/SToT.hide()
+			$Shelves/OToR.show()
+		8:
+			$Shelves/OToR.hide()
+			$Shelves/ToToWal.hide()
+			$Shelves/SToT.show()
+		9:
+			$Shelves/SToT.hide()
+			$Shelves/WarToZ.hide()
+			$Shelves/ToToWal.show()
+		10:
+			$Shelves/ToToWal.hide()
+			$Shelves/AToCh.hide()
+			$Shelves/WarToZ.show()
 
+func saveGame():
+	var save_game = File.new()
+	save_game.open("user://savegame.save", File.WRITE)
+	var save_nodes = get_tree().get_nodes_in_group("save")
+	for node in save_nodes:
+		# Check the node is an instanced scene so it can be instanced again during load.
+		if node.filename.empty():
+			print("persistent node '%s' is not an instanced scene, skipped" % node.name)
+			continue
 
-func _on_Arcade_pressed():
-	get_tree().change_scene("res://ArcadeSelect.tscn")
+		# Check the node has a save function.
+		if !node.has_method("save"):
+			print("persistent node '%s' is missing a save() function, skipped" % node.name)
+			continue
+
+		# Call the node's save function.
+		var node_data = node.call("save")
+
+		# Store the save dictionary as a new line in the save file.
+		save_game.store_line(to_json(node_data))
+	save_game.close()
+
+func loadGame():
+	if Global.level == null:
+		var save_game = File.new()
+		var save_nodes = get_tree().get_nodes_in_group("Save")
+		#for i in save_nodes:  #Do I need this?
+		#	i.queue_free()
+
+		# Load the file line by line and process that dictionary to restore
+		# the object it represents.
+		save_game.open("user://savegame.save", File.READ)
+		var node_data = parse_json(save_game.get_line())
+		Global.level = str(node_data["level"])
+		save_game.close()
+	updateDisabled()
+	$Control/Level.text = "Level: " + str(Global.level)
+
+func save():
+	var save_dict = {
+		"level" : Global.level
+	}
+	return save_dict
+
+func updateDisabled():
+	Global.level = int(Global.level)
+	for i in range (0, (11 if Global.level > 11 else Global.level)):
+		$Shelves/AToCh.get_popup().set_item_disabled(i, false)
+	for i in range (0, (9 if Global.level > 20 else Global.level - 11)):
+		$Shelves/ClToFa.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 30 else Global.level - 20)):
+		$Shelves/FrToG.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 40 else Global.level - 30)):
+		$Shelves/HToJun.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 50 else Global.level - 40)):
+		$Shelves/JunToL.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 60 else Global.level - 50)):
+		$Shelves/MToN.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 70 else Global.level - 60)):
+		$Shelves/OToR.get_popup().set_item_disabled(i, false)
+	for i in range (0, (11 if Global.level > 81 else Global.level - 70)):
+		$Shelves/SToT.get_popup().set_item_disabled(i, false)
+	for i in range (0, (10 if Global.level > 90 else Global.level - 81)):
+		$Shelves/ToToWal.get_popup().set_item_disabled(i, false)
+	for i in range (0, (9 if Global.level > 100 else Global.level - 91)):
+		$Shelves/WarToZ.get_popup().set_item_disabled(i, false)
+
+func _on_Up_pressed():
+	Global.level = int(Global.level) + 1
+	$Control/Level.text = "Level: " + str(Global.level)
+
+func _on_Down_pressed():
+	Global.level = int(Global.level) - 1
+	$Control/Level.text = "Level: " + str(Global.level)
