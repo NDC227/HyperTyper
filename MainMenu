@@ -16,5 +16,9 @@ func _ready():
 #	pass
 
 
-func _on_Button_pressed():
+func _on_Library_pressed():
 	get_tree().change_scene("res://TextSelect.tscn")
+
+
+func _on_Arcade_pressed():
+	get_tree().change_scene("res://ArcadeSelect.tscn")
