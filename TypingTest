@@ -79,11 +79,12 @@ func _on_UserText_text_changed():
 	var lastChar = $UserText.text.substr(index-1, 1)
 	var textLastChar = text.substr(index-1, 1)
 	if lastChar != textLastChar:
+		$WrongSound.play()
 		#print("you messed up")
 		mistakes += 1
 		$UserText.show_behind_parent = true
 		$UserText.readonly = true
-	if Input.is_action_pressed("ui_backspace"):
+	if Input.is_action_pressed("ui_backspace"):if Input.is_action_pressed("ui_backspace"):
 		$TextOverlay.text = $UserText.text
 		if text.substr(index, 1) == " " or text.substr(index-1, 1) == " ":
 			words -= 1
@@ -95,10 +96,10 @@ func _on_UserText_text_changed():
 				$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
 			
 		else:
-			$TextOverlay.text += lastChar
+			$TextOverlay.text = $UserText.text
 	if lastChar == " ":
 		words += 1
-	if index+1 == text.length():
+	if index+1 == text.length() and lastChar == textLastChar:
 		$SecondTimer.stop()
 		$TestUI/Control/Typing.hide()
 		$UserText.readonly = true
