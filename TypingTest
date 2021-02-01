@@ -78,25 +78,22 @@ func _on_UserText_text_changed():
 	var index = $UserText.text.length()
 	var lastChar = $UserText.text.substr(index-1, 1)
 	var textLastChar = text.substr(index-1, 1)
+	$TextOverlay.text = $UserText.text
 	if lastChar != textLastChar:
-		$WrongSound.play()
+		#$WrongSound.play()
 		#print("you messed up")
 		mistakes += 1
 		$UserText.show_behind_parent = true
 		$UserText.readonly = true
-	if Input.is_action_pressed("ui_backspace"):if Input.is_action_pressed("ui_backspace"):
-		$TextOverlay.text = $UserText.text
+		$TextOverlay.text = $TextOverlay.text.substr(0, $TextOverlay.text.length()-1)
+		if lastChar == " ":
+			$TextOverlay.append_bbcode("[color=red]_[/color]")
+		else:
+			$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
+	if Input.is_action_pressed("ui_backspace"):
 		if text.substr(index, 1) == " " or text.substr(index-1, 1) == " ":
 			words -= 1
-	else:
-		if lastChar != textLastChar:
-			if lastChar == " ":
-				$TextOverlay.append_bbcode("[color=red]_[/color]")
-			else:
-				$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
 			
-		else:
-			$TextOverlay.text = $UserText.text
 	if lastChar == " ":
 		words += 1
 	if index+1 == text.length() and lastChar == textLastChar:
