@@ -1,0 +1,87 @@
+extends Node
+
+
+# Declare member variables here. Examples:
+var file = "res://Assets/WAWList.txt"
+var nodes
+var nodewords
+var openNodes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+var words = []
+var wordsOnBoard
+var speedRate = 1
+var input = ""
+var score = 0
+var time = 0
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	randomize()
+	load_file()
+	$WAWUI/Control/Button.connect("pressed", self, "_on_Back_pressed")
+	nodes = [$WAWBoard/Control/Row1/Box1, $WAWBoard/Control/Row1/Box2, $WAWBoard/Control/Row1/Box3, $WAWBoard/Control/Row1/Box4,
+$WAWBoard/Control/Row2/Box5, $WAWBoard/Control/Row2/Box6, $WAWBoard/Control/Row2/Box7, $WAWBoard/Control/Row2/Box8, 
+$WAWBoard/Control/Row3/Box9, $WAWBoard/Control/Row3/Box10, $WAWBoard/Control/Row3/Box11, $WAWBoard/Control/Row3/Box12,
+$WAWBoard/Control/Row4/Box13, $WAWBoard/Control/Row4/Box14, $WAWBoard/Control/Row4/Box15, $WAWBoard/Control/Row4/Box16]
+	nodewords = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+#func _process(delta):
+#	pass
+
+func load_file():
+	var f = File.new()
+	f.open(file, File.READ)
+	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+		var line = f.get_line()
+		words.append(line)
+	f.close()
+	return
+
+func _on_Back_pressed():
+	get_tree().change_scene("res://ArcadeSelect.tscn")
+
+
+func _on_Timer_timeout():
+	if openNodes == []:
+		endGame()
+	else:
+		time += 1
+		$WAWUI/Control/Time.text = str(time)
+		var index = openNodes[randi() % openNodes.size()]
+		var node = nodes[index]
+		var rand = int(rand_range(0, words.size()))
+		if node.text == "-":
+			node.set_bbcode("[center]%s[/center]" %words[rand])
+			nodewords[index] = words[rand]
+		openNodes.erase(index)
+
+func _on_Input_focus_entered():
+	$Control/Input.text = ""
+	$Timer.start()
+
+func _on_Input_text_changed():
+	if Input.is_action_pressed("ui_backspace"):
+		input = $Control/Input.text
+	else:
+		input += $Control/Input.text.substr($Control/Input.text.length()-1, $Control/Input.text.length())
+	if input in words:
+		var index = nodewords.find(input)
+		score += nodewords[index].length()
+		nodewords[index] = ""
+		nodes[index].set_bbcode("[center]-[/center]")
+		openNodes.append(index)
+		input = ""
+		$Control/Input.text = ""
+		$WAWUI/Control/Score.text = str(score)
+		checkSpeed()
+	print(input)
+		
+func checkSpeed():
+	if score > speedRate * 100:
+		$Timer.wait_time = 1 * pow(0.95, speedRate)
+		speedRate += 1
+
+func endGame():
+	$Timer.stop()
+	$Control/Input.text = ""
+	$Control/Input.readonly = true
