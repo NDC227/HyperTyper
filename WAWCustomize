@@ -11,40 +11,40 @@ var sets = []
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	$Control/SetSelect.get_popup().connect("id_pressed", self, "_on_item_pressed")
-	loadGame()
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+	_on_Load_pressed()
 
 func _on_item_pressed(ID):
 	var node = $Control/SetSelect.get_popup().get_item_text(ID)
+	savelocation = node
 	var save_game = File.new()
 	save_game.open(node, File.READ)
 	var node_data = save_game.get_as_text()
 	words = node_data.split("\n")
 	save_game.close()
-	title = node.substr(7, title.length()-5)
-	$Control/SetTitle.text = title
+	
+	title = node
+	$Control/SetTitle.text = title.substr(7)
 	$Control/WordInput.text = ""
 	for word in words:
-		$Control/WordInput.text += word.substr(1, word.length()-2) + "\n"
+		$Control/WordInput.text += word + "\n"
 
 func loadGame():
 	var save_game = File.new()
 	save_game.open("user://WAWCustomLists.save", File.READ)
-	var node_data = save_game.get_as_text()
-	sets = node_data.split("\n")
+	while not save_game.eof_reached():
+		var node_data = save_game.get_line()
+		sets.append(node_data)
 	save_game.close()
 
 func saveGame():
 	var save_game = File.new()
-	save_game.open("user://WAWCustomLists.save", File.WRITE)
+	save_game.open("user://WAWCustomLists.save", File.READ_WRITE)
+	save_game.seek_end(0)
 	var save_nodes = get_tree().get_nodes_in_group("save")
 	for node in save_nodes:
-		var node_data = savelocation
-		save_game.store_line(to_json(node_data))
+		if not savelocation in save_game.get_as_text():
+			var node_data = savelocation
+			save_game.store_line(node_data)
 	save_game.close()
 
 func _on_Save_pressed():
@@ -66,18 +66,36 @@ func _on_Save_pressed():
 	var save_game = File.new()
 	save_game.open(savelocation, File.WRITE)
 	for word in words:
-		save_game.store_line(to_json(word))
+		save_game.store_line(word)
 	save_game.close()
 	#saves filename to set database
 	saveGame()
 
 func _on_Load_pressed():
-	loadGame()
 	$Control/SetSelect.get_popup().clear()
-	for i in range (len(sets)-1):
-		#$Control/RichTextLabel.text += sets[i].substr(1, sets[i].length()-2)
-		$Control/SetSelect.get_popup().add_item(sets[i].substr(1, sets[i].length()-2))
+	sets = []
+	loadGame()
+	for i in range (len(sets)):
+		$Control/SetSelect.get_popup().add_item(sets[i])
 
-func _on_Button_pressed():
-	var dir = Directory.new()
-	dir.remove("user://DippoWords\t.save")
+func _on_Select_pressed():
+	if savelocation != "":
+		Global.WAWfile = savelocation
+
+func _on_Back_pressed():
+	get_tree().change_scene("res://WhackAWord.tscn")
+
+func _on_SpeedSlider_value_changed(value):
+	$Control/Speed.text = str(value)
+	Global.WAWspeed = $Control/SpeedSlider.value
+
+func _on_Speed_text_changed():
+	if Input.is_action_pressed("ui_accept"):
+		$Control/Speed.release_focus()
+
+func _on_Speed_focus_exited():
+	if int($Control/Speed.text) < 0.1:
+		$Control/Speed.text = "0.1"
+	elif int($Control/Speed.text) > 5:
+		$Control/Speed.text = "5"
+	$Control/SpeedSlider.value = float($Control/Speed.text)
