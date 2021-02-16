@@ -2,12 +2,12 @@ extends Node
 
 
 # Declare member variables here. Examples:
-var file = "res://Assets/WAWList.txt"
+var file = Global.WAWfile
 var nodes
 var nodewords
 var openNodes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 var words = []
-var wordsOnBoard
+#var wordsOnBoard
 var speedRate = 1
 var input = ""
 var score = 0
@@ -16,6 +16,7 @@ var time = 0
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	randomize()
+	$Timer.wait_time = Global.WAWspeed
 	load_file()
 	$WAWUI/Control/Button.connect("pressed", self, "_on_Back_pressed")
 	nodes = [$WAWBoard/Control/Row1/Box1, $WAWBoard/Control/Row1/Box2, $WAWBoard/Control/Row1/Box3, $WAWBoard/Control/Row1/Box4,
@@ -23,7 +24,8 @@ $WAWBoard/Control/Row2/Box5, $WAWBoard/Control/Row2/Box6, $WAWBoard/Control/Row2
 $WAWBoard/Control/Row3/Box9, $WAWBoard/Control/Row3/Box10, $WAWBoard/Control/Row3/Box11, $WAWBoard/Control/Row3/Box12,
 $WAWBoard/Control/Row4/Box13, $WAWBoard/Control/Row4/Box14, $WAWBoard/Control/Row4/Box15, $WAWBoard/Control/Row4/Box16]
 	nodewords = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
-
+	resetGame()
+	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
 #	pass
@@ -40,13 +42,11 @@ func load_file():
 func _on_Back_pressed():
 	get_tree().change_scene("res://ArcadeSelect.tscn")
 
-
 func _on_Timer_timeout():
 	if openNodes == []:
 		endGame()
+		resetGame()
 	else:
-		time += 1
-		$WAWUI/Control/Time.text = str(time)
 		var index = openNodes[randi() % openNodes.size()]
 		var node = nodes[index]
 		var rand = int(rand_range(0, words.size()))
@@ -55,15 +55,19 @@ func _on_Timer_timeout():
 			nodewords[index] = words[rand]
 		openNodes.erase(index)
 
+func _on_SecondTimer_timeout():
+	time += 1
+	$WAWUI/Control/Time.text = str(time)
+
 func _on_Input_focus_entered():
+	$WAWUI/Machine.texture = load("res://Assets/WAWMachine.png")
+	$WAWUI/Machine.position.x = 533
 	$Control/Input.text = ""
 	$Timer.start()
+	$SecondTimer.start()
 
 func _on_Input_text_changed():
-	if Input.is_action_pressed("ui_backspace"):
-		input = $Control/Input.text
-	else:
-		input += $Control/Input.text.substr($Control/Input.text.length()-1, $Control/Input.text.length())
+	input = $Control/Input.text
 	if input in words:
 		var index = nodewords.find(input)
 		score += nodewords[index].length()
@@ -77,11 +81,36 @@ func _on_Input_text_changed():
 	print(input)
 		
 func checkSpeed():
-	if score > speedRate * 100:
-		$Timer.wait_time = 1 * pow(0.95, speedRate)
+	if score > speedRate * Global.WAWspeed * 100:
+		$Timer.wait_time = Global.WAWspeed * pow(0.95, speedRate)
 		speedRate += 1
 
 func endGame():
 	$Timer.stop()
+	$SecondTimer.stop()
 	$Control/Input.text = ""
-	$Control/Input.readonly = true
+	
+func resetGame():
+	$WAWUI/Machine.texture = load("res://Assets/WAWMachineOff.png")
+	$WAWUI/Machine.position.x = 512
+	$Control/Quarter.disabled = false
+	$Control/Quarter.pressed = false
+	$Control/Input.hide()
+	openNodes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+	nodewords = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
+	speedRate = 1
+	input = ""
+	score = 0
+	time = 0
+	$WAWUI/Control/Score.text = "0"
+	$WAWUI/Control/Time.text = "0"
+	for node in nodes:
+		node.set_bbcode("[center]-[/center]")
+
+func _on_Quarter_pressed():
+	$Control/Input.show()
+	$Control/Input.grab_focus()
+	$Control/Quarter.disabled = true
+
+func _on_Customize_pressed():
+	get_tree().change_scene("res://WAWCustomize.tscn")
