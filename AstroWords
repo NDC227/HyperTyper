@@ -1,0 +1,164 @@
+extends Node
+
+
+# Declare member variables here. Examples:
+var file = Global.WAWfile
+var words = []
+var screenWords = []
+var objects = []
+var health = 100
+var time = 0
+var score = 0
+var input = ""
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	randomize()
+	load_file()
+	$AstroWordsUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
+	resetGame()
+
+#func _process(delta):
+#	pass
+
+func load_file():
+	var f = File.new()
+	f.open(file, File.READ)
+	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+		var line = f.get_line()
+		words.append(line)
+	f.close()
+	return
+
+func _on_Back_pressed():
+	get_tree().change_scene("res://ArcadeSelect.tscn")
+
+func _on_Quarter_pressed():
+	$Control/Quarter.disabled = true
+	$Control/Input.show()
+	$Control/Input.grab_focus()
+
+func _on_Customize_pressed():
+	Global.prevScene = "res://AstroWords.tscn"
+	get_tree().change_scene("res://ArcadeCustomize.tscn")
+
+func _on_SecondTimer_timeout():
+	time += 1
+	$Control/Time.text = str(time)
+
+func _on_Timer_timeout():
+	var num = int(rand_range(0, 5))
+	if num != 4:
+		var x = int(rand_range(200,760))
+		var y = 96
+		var node = load("res://Asteroid.tscn").instance()
+		var rand = int(rand_range(0, words.size()))
+		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %words[rand])
+		objects.append(node)
+		screenWords.append(words[rand])
+		node.position.x = x
+		node.position.y = y
+		$AstroWordsUI.add_child(node)
+		var tween = node.get_node("Tween")
+		tween.interpolate_property(node, "position", Vector2(x, y), Vector2(512, 1360), 20)
+		tween.start()
+	else:
+		var x1 = 144
+		var x2 = 832
+		var y1 = 232
+		var y2 = 200
+		num = int(rand_range(0, 2))
+		if num == 0:
+			var temp = x1
+			x1 = x2
+			x2 = temp - 40
+		else:
+			x2 += 40
+		var node = load("res://Healing.tscn").instance()
+		var rand = int(rand_range(0, words.size()))
+		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %words[rand])
+		objects.append(node)
+		screenWords.append(words[rand])
+		node.position.x = x1
+		node.position.y = y1
+		$AstroWordsUI.add_child(node)
+		var tween = node.get_node("Tween")
+		tween.interpolate_property(node, "position", Vector2(x1, y1), Vector2(x2, y2), 5, Tween.TRANS_LINEAR)
+		tween.start()
+
+func _on_Input_focus_entered():
+	$SecondTimer.start()
+	$Timer.start()
+
+func _on_Input_text_changed():
+	input = $Control/Input.text
+	if input in screenWords:
+		var index = screenWords.find(input)
+		score += screenWords[index].length()
+		var node = objects[index]
+		if node.has_method("heal"):
+			health += screenWords[index].length()
+			$Control/Health.text = str(health)
+			checkHealth()
+		screenWords.erase(input)
+		node.queue_free()
+		objects.remove(index)
+		input = ""
+		$Control/Input.text = ""
+		$Control/Score.text = str(score)
+	print(input)
+
+func _on_Button_pressed():
+	health -= 21
+	checkHealth()
+
+func _on_Button2_pressed():
+	health += 21
+	checkHealth()
+	
+func checkHealth():
+	if health > 100:
+		health = 100
+	elif health > 66:
+		$AstroWordsUI/Shield.texture = load("res://Assets/AstroWords/AWShieldFull.png")
+	elif health > 33:
+		$AstroWordsUI/Shield.texture = load("res://Assets/AstroWords/AWShieldMedium.png")
+	elif health > 0:
+		$AstroWordsUI/Shield.texture = load("res://Assets/AstroWords/AWShieldLow.png")
+	elif health <= 0:
+		health = 0
+		$SecondTimer.stop()
+		$Timer.stop()
+		resetGame()
+	$Control/Health.text = str(health)
+		
+func resetGame():
+	$Control/Quarter.disabled = false
+	$Control/Input.text = ""
+	input = ""
+	$Control/Input.hide()
+	health = 100
+	time = 0
+	$Control/Time.text = "0"
+	score = 0
+	$Control/Score.text = "0"
+
+func _on_ShieldArea_area_shape_entered(area_id, area, area_shape, self_shape):
+	health -= 5
+	$Control/Health.text = str(health)
+	var node = area.get_parent()
+	var nodeword = node.get_node("Control/Text").text
+	var index = screenWords.find(nodeword)
+	screenWords.erase(nodeword)
+	node.queue_free()
+	objects.remove(index)
+	checkHealth()
+
+func _on_SideArea_area_shape_entered(area_id, area, area_shape, self_shape):
+	print("collision")
+	var node = area.get_parent()
+	var nodeword = node.get_node("Control/Text").text
+	var index = screenWords.find(nodeword)
+	screenWords.erase(nodeword)
+	node.queue_free()
+	objects.remove(index)
