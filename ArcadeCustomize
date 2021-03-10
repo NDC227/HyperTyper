@@ -83,11 +83,11 @@ func _on_Select_pressed():
 		Global.WAWfile = savelocation
 
 func _on_Back_pressed():
-	get_tree().change_scene("res://WhackAWord.tscn")
+	get_tree().change_scene(Global.prevScene)
 
 func _on_SpeedSlider_value_changed(value):
 	$Control/Speed.text = str(value)
-	Global.WAWspeed = $Control/SpeedSlider.value
+	Global.WAWspeed = 1 / $Control/SpeedSlider.value
 
 func _on_Speed_text_changed():
 	if Input.is_action_pressed("ui_accept"):
