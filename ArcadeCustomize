@@ -1,44 +1,101 @@
 extends Node
 
-
-# Declare member variables here. Examples:
 var title = ""
 var input = ""
 var savelocation = ""
 var words = []
 var sets = []
+var dialog = []
 
-# Called when the node enters the scene tree for the first time.
+signal toDialog
+
 func _ready():
+	#shows dialogue on first time
+	if "AC" in Global.tutorialChecks:
+		dialog = Global.tutorialText[4]
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
+		
+		var save_game = File.new()
+		save_game.open("user://tutorial.save", File.READ_WRITE)
+		var save_nodes = get_tree().get_nodes_in_group("save")
+		for node in save_nodes:
+			var node_data = ""
+			save_game.seek(14)
+			save_game.store_line("  ")
+		save_game.close()
+		Global.tutorialChecks.erase("AC")
+		
+	#connects popup
 	$Control/SetSelect.get_popup().connect("id_pressed", self, "_on_item_pressed")
 	_on_Load_pressed()
 
+#pulls the word list that is selected
 func _on_item_pressed(ID):
 	var node = $Control/SetSelect.get_popup().get_item_text(ID)
-	savelocation = node
+	savelocation = "user://" + node + ".save"
 	var save_game = File.new()
-	save_game.open(node, File.READ)
-	var node_data = save_game.get_as_text()
-	words = node_data.split("\n")
+	save_game.open(savelocation, File.READ)
+	words = []
+	while not save_game.eof_reached():
+		var node_data = save_game.get_line()
+		words.append(node_data)
 	save_game.close()
 	
 	title = node
-	$Control/SetTitle.text = title.substr(7)
-	$Control/WordInput.text = ""
-	for word in words:
-		$Control/WordInput.text += word + "\n"
+	$Control/SetTitle.text = title
+	$Control/WordInput.text = PoolStringArray(words).join("\n")
 
+#defunct
 func loadGame():
 	var save_game = File.new()
-	save_game.open("user://WAWCustomLists.save", File.READ)
+	save_game.open("user://CustomLists.save", File.READ)
 	while not save_game.eof_reached():
 		var node_data = save_game.get_line()
 		sets.append(node_data)
 	save_game.close()
+	sets.remove(sets.size()-1)
 
+#defunct
 func saveGame():
 	var save_game = File.new()
-	save_game.open("user://WAWCustomLists.save", File.READ_WRITE)
+	save_game.open("user://CustomLists.save", File.READ_WRITE)
+	save_game.seek_end(0)
+	var save_nodes = get_tree().get_nodes_in_group("save")
+	for node in save_nodes:
+		if not savelocation in save_game.get_as_text():
+			var node_data = savelocation
+			save_game.store_line(node_data)
+	save_game.close()
+	
+#processes data to be saved
+func _on_Save_pressed():
+	words = []
+	#set title
+	title = $Control/SetTitle.text.strip_edges()
+	while " " in title:
+		title = title.replace(" ", "")
+	savelocation = title
+	#set words
+	input = $Control/WordInput.text
+	var regex = RegEx.new()
+	regex.compile("\\S+") #everything that is not whitespace
+	var results = regex.search_all(input)
+	for result in results:
+		words.push_back(result.get_string())
+	for i in range (words.size()-1):
+		words[i] = words[i].to_lower()
+	#save words into file
+	var save_game = File.new()
+	save_game.open("user://" + savelocation + ".save", File.WRITE)
+	for word in words:
+		save_game.store_line(word)
+	save_game.close()
+	#save file into database 
+	save_game = File.new()
+	save_game.open("user://CustomLists.save", File.READ_WRITE)
 	save_game.seek_end(0)
 	var save_nodes = get_tree().get_nodes_in_group("save")
 	for node in save_nodes:
@@ -47,52 +104,71 @@ func saveGame():
 			save_game.store_line(node_data)
 	save_game.close()
 
-func _on_Save_pressed():
-	#process data to be saved
-	words = []
-	title = $Control/SetTitle.text.strip_edges()
-	while " " in title:
-		title = title.replace(" ", "")
-	savelocation = "user://" + title
-	input = $Control/WordInput.text
-	var regex = RegEx.new()
-	regex.compile("\\S+") # Negated whitespace character class.
-	var results = regex.search_all(input)
-	for result in results:
-		words.push_back(result.get_string())
-	for i in range (words.size()-1):
-		words[i] = words[i].to_lower()
-	#saves words in file
-	var save_game = File.new()
-	save_game.open(savelocation, File.WRITE)
-	for word in words:
-		save_game.store_line(word)
-	save_game.close()
-	#saves filename to set database
-	saveGame()
-
+#processes data to be loaded
 func _on_Load_pressed():
+	#clear current information
 	$Control/SetSelect.get_popup().clear()
 	sets = []
-	loadGame()
+	#set up lists
+	var save_game = File.new()
+	save_game.open("user://CustomLists.save", File.READ)
+	while not save_game.eof_reached():
+		var node_data = save_game.get_line()
+		sets.append(node_data)
+	save_game.close()
+	sets.remove(sets.size()-1) #to get rid of the buffer line
 	for i in range (len(sets)):
 		$Control/SetSelect.get_popup().add_item(sets[i])
 
+#prompts confirmation
+func _on_Delete_pressed():
+	$DeleteConfirm.show()
+	get_tree().paused = true
+
+#confirm deletion of selected list
+func _on_Confirm_pressed():
+	get_tree().paused = false
+	#remove from sets and directory
+	sets.erase(title)
+	var dir = Directory.new()
+	dir.remove("user://" + title + ".save")
+	var save_game = File.new()
+	save_game.open("user://CustomLists.save", File.WRITE_READ)
+	for set in sets:
+		save_game.store_line(set)
+	save_game.close()
+	#reloads and clears screen
+	_on_Load_pressed()
+	$Control/SetTitle.text = "-"
+	$Control/WordInput.text = "-"
+	words = []
+	$DeleteConfirm.hide()
+
+#cancels deletion
+func _on_NotConfirm_pressed():
+	get_tree().paused = false
+	$DeleteConfirm.hide()
+
+#sets current list as the one to be used
 func _on_Select_pressed():
 	if savelocation != "":
 		Global.WAWfile = savelocation
 
+#goes back to the arcade game
 func _on_Back_pressed():
 	get_tree().change_scene(Global.prevScene)
 
+#adjusts the speed and updates slider value - is inverse
 func _on_SpeedSlider_value_changed(value):
 	$Control/Speed.text = str(value)
 	Global.WAWspeed = 1 / $Control/SpeedSlider.value
 
+#to release focus when user presses "enter"
 func _on_Speed_text_changed():
 	if Input.is_action_pressed("ui_accept"):
 		$Control/Speed.release_focus()
 
+#sets the limits for the speed, prompted by above function
 func _on_Speed_focus_exited():
 	if int($Control/Speed.text) < 0.1:
 		$Control/Speed.text = "0.1"
