@@ -1,15 +1,11 @@
 extends Node2D
 
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
-
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	pass # Replace with function body.
+	pass
 
-
+#for other scene to check if asteroid is healing
 func heal():
 	pass
+
+func _on_Object_animation_finished():
+	queue_free()
