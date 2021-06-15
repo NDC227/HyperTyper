@@ -1,7 +1,5 @@
 extends Node
 
-
-# Declare member variables here. Examples:
 var file = "res://Texts/WotW2.txt"
 var title = ""
 var text = ""
@@ -11,11 +9,12 @@ var words = 0
 var mistakes = 0
 var countdown = 1
 var dialog = []
+var tutorialDialog = []
 
 signal toDialog
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
+	#sets up the scene
 	file = Global.text
 	load_file()
 	$TestUI/Control/Title.text = ""
@@ -27,13 +26,14 @@ func _ready():
 	$TestUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
 	$TestResults/Control/Back.connect("pressed", self, "_on_Back_pressed")
 	$TestResults/Control/Retry.connect("pressed", self, "_on_Retry_pressed")
-	if Global.currentlevel == Global.level:
+	#only shows dialogue if first time on passage
+	if Global.currentlevel == Global.level and dialog.size() != 0:
 		emit_signal("toDialog")
 		$DialogueBox.show()
 		get_tree().paused = true
 		$DialogueBox/Timer.start()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
+#detects for backspace for when screen is paused due to typing mistake
 func _process(delta):
 	if Input.is_action_just_pressed("ui_backspace") and $UserText.readonly == true:
 		$UserText.readonly = false
@@ -42,6 +42,7 @@ func _process(delta):
 		$UserText.show_behind_parent = false
 		$UserText.cursor_set_column($UserText.text.length())
 
+#loads the text file with title and any dialogue
 func load_file():
 	var f = File.new()
 	f.open(file, File.READ)
@@ -49,19 +50,68 @@ func load_file():
 	var n = f.get_line()
 	for i in range (n):
 		dialog.append(f.get_line())
-	#print(dialog)
-	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+	while not f.eof_reached():
 		var line = f.get_line()
 		line += " "
 		text += line
 	f.close()
 	return
 
-func _on_Back_pressed():
-	get_tree().change_scene("res://TextSelect.tscn")
-	if int(Global.currentlevel) == int(Global.level):
-		Global.level = int(Global.level) + 1
-		
+#processes user input
+func _on_UserText_text_changed():
+	var index = $UserText.text.length()
+	var lastChar = $UserText.text.substr(index-1, 1)
+	var textLastChar = text.substr(index-1, 1)
+	$TextOverlay.text = $UserText.text
+	#check for mistake in input
+	if lastChar != textLastChar:
+		#$WrongSound.play()
+		mistakes += 1
+		$UserText.show_behind_parent = true
+		$UserText.readonly = true
+		$TextOverlay.text = $TextOverlay.text.substr(0, $TextOverlay.text.length()-1)
+		if lastChar == " ":
+			$TextOverlay.append_bbcode("[color=red]_[/color]")
+		else:
+			$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
+	#adjusts to backspaces
+	if Input.is_action_pressed("ui_backspace"):
+		if text.substr(index, 1) == " " or text.substr(index-1, 1) == " ":
+			words -= 1
+	#adjusts word count
+	if lastChar == " ":
+		words += 1
+	#check for ending game
+	if index+1 == text.length() and lastChar == textLastChar:
+		$SecondTimer.stop()
+		$TestUI/Control/Typing.hide()
+		$UserText.readonly = true
+		$TestResults/Control/Words.text = str(words)
+		$TestResults/Control/Time.text = str(time)
+		$TestResults/Control/WPM.text = str(words*60/time)
+		$TestResults/Control/Mistakes.text = str(mistakes)
+		$TestResults.show()
+		checkDialog()
+
+#runs on first time to show special dialog
+func checkDialog():
+	if "TR" in Global.tutorialChecks:
+		dialog = Global.tutorialText[2]
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
+		var save_game = File.new()
+		save_game.open("user://tutorial.save", File.READ_WRITE)
+		var save_nodes = get_tree().get_nodes_in_group("save")
+		for node in save_nodes:
+			var node_data = ""
+			save_game.seek(8)
+			save_game.store_line("  ")
+		save_game.close()
+		Global.tutorialChecks.erase("TR")
+
+#resets game
 func _on_Retry_pressed():
 	userText = ""
 	time = 0
@@ -74,45 +124,20 @@ func _on_Retry_pressed():
 	$TestResults.hide()
 	$TestReady.show()
 
-func _on_UserText_text_changed():
-	var index = $UserText.text.length()
-	var lastChar = $UserText.text.substr(index-1, 1)
-	var textLastChar = text.substr(index-1, 1)
-	$TextOverlay.text = $UserText.text
-	if lastChar != textLastChar:
-		#$WrongSound.play()
-		#print("you messed up")
-		mistakes += 1
-		$UserText.show_behind_parent = true
-		$UserText.readonly = true
-		$TextOverlay.text = $TextOverlay.text.substr(0, $TextOverlay.text.length()-1)
-		if lastChar == " ":
-			$TextOverlay.append_bbcode("[color=red]_[/color]")
-		else:
-			$TextOverlay.append_bbcode("[color=red]%s[/color]" %lastChar)
-	if Input.is_action_pressed("ui_backspace"):
-		if text.substr(index, 1) == " " or text.substr(index-1, 1) == " ":
-			words -= 1
-			
-	if lastChar == " ":
-		words += 1
-	if index+1 == text.length() and lastChar == textLastChar:
-		$SecondTimer.stop()
-		$TestUI/Control/Typing.hide()
-		$UserText.readonly = true
-		$TestResults/Control/Words.text = str(words)
-		$TestResults/Control/Time.text = str(time)
-		$TestResults/Control/WPM.text = str(words*60/time)
-		$TestResults/Control/Mistakes.text = str(mistakes)
-		$TestResults.show()
-
+#keeps track of time and typing statistics
 func _on_SecondTimer_timeout():
 	time += 1
 	$TestUI/Control/Time.text = str(time)
 	$TestUI/Control/WPM.text = str(words*60/time)
 
-
+#starts the game when textedit entered
 func _on_UserText_focus_entered():
 	$TestReady.hide()
 	$TestUI/Control/Typing.show()
 	$SecondTimer.start()
+	
+#scene change plus adjust level
+func _on_Back_pressed():
+	get_tree().change_scene("res://TextSelect.tscn")
+	if Global.currentlevel == Global.level and userText == text:
+		Global.level = Global.level + 1
