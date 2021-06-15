@@ -1,24 +1,33 @@
 extends Node
 
+var dialog
 
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
+signal toDialog
 
-
-# Called when the node enters the scene tree for the first time.
+#runs on first time to show dialogue
 func _ready():
-	pass # Replace with function body.
+	if "AS" in Global.tutorialChecks:
+		dialog = Global.tutorialText[3]
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
+		var save_game = File.new()
+		save_game.open("user://tutorial.save", File.READ_WRITE)
+		var save_nodes = get_tree().get_nodes_in_group("save")
+		for node in save_nodes:
+			var node_data = ""
+			save_game.seek(11)
+			save_game.store_line("  ")
+		save_game.close()
+		Global.tutorialChecks.erase("AS")
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
-
+#scene changes
 func _on_Back_pressed():
 	get_tree().change_scene("res://MainMenu.tscn")
 
-
 func _on_WhackAWord_pressed():
 	get_tree().change_scene("res://WhackAWord.tscn")
+
+func _on_AstroWords_pressed():
+	get_tree().change_scene("res://AstroWords.tscn")
