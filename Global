@@ -1,18 +1,43 @@
 extends Node
 
-
-# Declare member variables here. Examples:
-var text = "res://Texts/WotW2.txt"
+var tutorialChecks = []
+var tutorialText = []
+var text = "res://Texts/Test.txt"
 var shelf = 1
 var level
 var currentlevel
+var prevScene = ""
+var WAWfile = "res://Assets/DefaultList.txt"
+var WAWspeed = 1
 
-
-# Called when the node enters the scene tree for the first time.
+#checks if tutorial is empty or not
 func _ready():
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+	var tutorial = File.new()
+	tutorial.open("user://tutorial.save", File.READ_WRITE)
+	var node_data = tutorial.get_line()
+	while node_data != "STOP":
+		tutorialChecks.append(node_data)
+		node_data = tutorial.get_line()
+	var temptext = []
+	node_data = tutorial.get_line()
+	while not tutorial.eof_reached():
+		if node_data != "BREAK":
+			temptext.append(node_data)
+			node_data = tutorial.get_line()
+		else:
+			node_data = tutorial.get_line()
+			tutorialText.append(temptext)
+			temptext = []
+	tutorial.close()
+	var temp = []
+	for i in range (tutorialChecks.size()):
+		if not tutorialChecks[i].strip_edges() == "":
+			temp.append(tutorialChecks[i])
+	if temp == []:
+		var dir = Directory.new()
+		dir.remove("user://tutorial.save")
+		var file = File.new()
+		file.open("user://tutorial.save", File.WRITE_READ)
+		file.store_line("-")
+		file.store_line("-")
+		file.close()
