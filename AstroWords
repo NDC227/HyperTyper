@@ -1,72 +1,108 @@
 extends Node
 
-
-# Declare member variables here. Examples:
 var file = Global.WAWfile
 var words = []
 var screenWords = []
 var objects = []
+var asteroids = []
+var speedRate = 1
 var health = 100
 var time = 0
 var score = 0
 var input = ""
+var dialog = []
+var double = false
+var count = 0
 
-# Called when the node enters the scene tree for the first time.
+signal toDialog
+
 func _ready():
+	#runs on first time to show dialogue
+	if "AW" in Global.tutorialChecks:
+		dialog = Global.tutorialText[6]
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
+		var save_game = File.new()
+		save_game.open("user://tutorial.save", File.READ_WRITE)
+		var save_nodes = get_tree().get_nodes_in_group("save")
+		for node in save_nodes:
+			var node_data = ""
+			save_game.seek(21)
+			save_game.store_line("  ")
+		save_game.close()
+		Global.tutorialChecks.erase("AW")
+	
+	#makes random values true random
 	randomize()
 	load_file()
+	#connects signals
+	$AstroWordsUI/Cannon.connect("animation_finished", self, "_on_Cannon_animation_finished")
 	$AstroWordsUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
+	$ArcadeResults/Control/TryAgain.connect("pressed", self, "resetGame")
 	resetGame()
 
-#func _process(delta):
-#	pass
-
+#loads the word list
 func load_file():
 	var f = File.new()
 	f.open(file, File.READ)
-	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+	while not f.eof_reached():
 		var line = f.get_line()
 		words.append(line)
 	f.close()
 	return
 
-func _on_Back_pressed():
-	get_tree().change_scene("res://ArcadeSelect.tscn")
-
+#starts the game
 func _on_Quarter_pressed():
 	$Control/Quarter.disabled = true
 	$Control/Input.show()
 	$Control/Input.grab_focus()
+	
+#starts the timers, prompted by above function
+func _on_Input_focus_entered():
+	$SecondTimer.start()
+	$Timer.start()
 
-func _on_Customize_pressed():
-	Global.prevScene = "res://AstroWords.tscn"
-	get_tree().change_scene("res://ArcadeCustomize.tscn")
-
+#updates timer
 func _on_SecondTimer_timeout():
 	time += 1
 	$Control/Time.text = str(time)
 
+#summons the asteroids
 func _on_Timer_timeout():
-	var num = int(rand_range(0, 5))
-	if num != 4:
+	var rot = int(rand_range(0, 20)) #amount of rotation
+	var num = int(rand_range(0, 20)) #type of asteroid
+	var word = words[int(rand_range(0, words.size()))] #word chosen
+	#adjusts size of asteroid for longer words
+	var size = 1
+	if word.length() > 8:
+		size = 1.2
+	#processing for normal asteroid
+	if num > 5:
 		var x = int(rand_range(200,760))
 		var y = 96
 		var node = load("res://Asteroid.tscn").instance()
-		var rand = int(rand_range(0, words.size()))
-		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %words[rand])
+		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %word)
 		objects.append(node)
-		screenWords.append(words[rand])
+		asteroids.append(node)
+		screenWords.append(word)
 		node.position.x = x
 		node.position.y = y
+		node.get_node("Sprite").scale *= size
+		node.get_node("Area/Collision").scale *= size
 		$AstroWordsUI.add_child(node)
 		var tween = node.get_node("Tween")
-		tween.interpolate_property(node, "position", Vector2(x, y), Vector2(512, 1360), 20)
+		tween.interpolate_property(node, "position", Vector2(x, y), Vector2(512, 1360), 20 / speedRate)
 		tween.start()
-	else:
+		node.get_node("Animation").play("Rotate")
+		node.get_node("Animation").advance(rot)
+	#processing for healing asteroid
+	elif num > 4:
 		var x1 = 144
 		var x2 = 832
-		var y1 = 232
-		var y2 = 200
+		var y1 = int(rand_range(100, 252))
+		var y2 = int(rand_range(100, 252))
 		num = int(rand_range(0, 2))
 		if num == 0:
 			var temp = x1
@@ -75,47 +111,126 @@ func _on_Timer_timeout():
 		else:
 			x2 += 40
 		var node = load("res://Healing.tscn").instance()
-		var rand = int(rand_range(0, words.size()))
-		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %words[rand])
+		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %word)
 		objects.append(node)
-		screenWords.append(words[rand])
+		screenWords.append(word)
 		node.position.x = x1
 		node.position.y = y1
+		node.get_node("Sprite").scale *= size
+		node.get_node("Area/Collision").scale *= size
 		$AstroWordsUI.add_child(node)
 		var tween = node.get_node("Tween")
 		tween.interpolate_property(node, "position", Vector2(x1, y1), Vector2(x2, y2), 5, Tween.TRANS_LINEAR)
 		tween.start()
+		node.get_node("Animation").play("Rotate")
+		node.get_node("Animation").advance(rot)
+	#processing for double shot asteroid (very similar to healing)
+	else:
+		var x1 = 144
+		var x2 = 832
+		var y1 = int(rand_range(100, 252))
+		var y2 = int(rand_range(100, 252))
+		num = int(rand_range(0, 2))
+		if num == 0:
+			var temp = x1
+			x1 = x2
+			x2 = temp - 40
+		else:
+			x2 += 40
+		var node = load("res://DoubleBarrel.tscn").instance()
+		node.get_node("Control/Text").set_bbcode("[center]%s[/center]" %word)
+		objects.append(node)
+		screenWords.append(word)
+		node.position.x = x1
+		node.position.y = y1
+		node.get_node("Sprite").scale *= size
+		node.get_node("Area/Collision").scale *= size
+		$AstroWordsUI.add_child(node)
+		var tween = node.get_node("Tween")
+		tween.interpolate_property(node, "position", Vector2(x1, y1), Vector2(x2, y2), 5, Tween.TRANS_LINEAR)
+		tween.start()
+		node.get_node("Animation").play("Rotate")
+		node.get_node("Animation").advance(rot)
 
-func _on_Input_focus_entered():
-	$SecondTimer.start()
-	$Timer.start()
-
+#timer so that two seconds elapse before results are shown
+func _on_EndTimer_timeout():
+	count += 1
+	if count == 2:
+		$ArcadeResults/Control/Score.text = str(score)
+		$ArcadeResults/Control/Time.text = str(time)
+		$ArcadeResults.show()
+		
+#control processing on user input
 func _on_Input_text_changed():
 	input = $Control/Input.text
+	#checks for matches
 	if input in screenWords:
+		$AstroWordsUI/Cannon.set_frame(1)
+		$AstroWordsUI/Cannon.play()
+		#finds word from list of active asteroids and removes it
 		var index = screenWords.find(input)
 		score += screenWords[index].length()
 		var node = objects[index]
+		node.get_node("Control/Text").text = ""
+		node.get_node("Sprite").connect("animation_finished", node, "_on_Object_animation_finished")
+		node.get_node("Sprite").play()
+		$AstroWordsUI/Cannon.look_at(node.position)
+		#checks if is healing asteroid
 		if node.has_method("heal"):
 			health += screenWords[index].length()
 			$Control/Health.text = str(health)
 			checkHealth()
 		screenWords.erase(input)
-		node.queue_free()
 		objects.remove(index)
+		#only if is normal asteroid
+		if node in asteroids:
+			asteroids.erase(node)
+		#checks if currently has double shot and removes second asteroid if so
+		if double:
+			if asteroids == []:
+				pass
+			else:
+				var node2 = asteroids[0]
+				node2.get_node("Control/Text").text = ""
+				node2.get_node("Sprite").connect("animation_finished", node2, "_on_Object_animation_finished")
+				node2.get_node("Sprite").play()
+				screenWords.erase(screenWords.find(node2.get_node("Control/Text").text))
+				objects.erase(objects.find(node2))
+				asteroids.remove(0)
+				double = false
+#			var node2 = objects[0]
+#			for i in range (objects.size()):
+#				if objects[i].has_method("heal") or objects[i].has_method("doubleBarrel"):
+#					continue
+#				else:
+#					node2 = objects[i]
+#					break
+#			node2.get_node("Control/Text").text = ""
+#			node2.get_node("Sprite").connect("animation_finished", node2, "_on_Object_animation_finished")
+#			node2.get_node("Sprite").play()
+#			screenWords.pop_front()
+#			objects.pop_front()
+#			double = false
+		#checks if is double shot asteroid
+		if node.has_method("doubleBarrel"):
+			double = true
+		#resets input
 		input = ""
 		$Control/Input.text = ""
 		$Control/Score.text = str(score)
-	print(input)
 
-func _on_Button_pressed():
-	health -= 21
-	checkHealth()
-
-func _on_Button2_pressed():
-	health += 21
-	checkHealth()
+#removes asteroid from screen after playing animation, promted by above function
+func _on_Object_animation_finished():
+	var index = screenWords.find(input)
+	var node = objects[index]
+	node.queue_free()
 	
+#resets cannon after animation
+func _on_Cannon_animation_finished():
+	$AstroWordsUI/Cannon.stop()
+	$AstroWordsUI/Cannon.set_frame(0)
+
+#adjusts health to fit in limits, adjusts shield to reflect health level, ends game if done
 func checkHealth():
 	if health > 100:
 		health = 100
@@ -129,36 +244,60 @@ func checkHealth():
 		health = 0
 		$SecondTimer.stop()
 		$Timer.stop()
-		resetGame()
+		$EndTimer.start()
 	$Control/Health.text = str(health)
 		
+#resets the game
 func resetGame():
+	$ArcadeResults.hide()
+	$EndTimer.stop()
 	$Control/Quarter.disabled = false
 	$Control/Input.text = ""
 	input = ""
 	$Control/Input.hide()
 	health = 100
+	checkHealth()
 	time = 0
 	$Control/Time.text = "0"
 	score = 0
 	$Control/Score.text = "0"
+	count = 0
 
+#processes asteroid collisions to remove asteroids if not typed
 func _on_ShieldArea_area_shape_entered(area_id, area, area_shape, self_shape):
 	health -= 5
 	$Control/Health.text = str(health)
 	var node = area.get_parent()
 	var nodeword = node.get_node("Control/Text").text
 	var index = screenWords.find(nodeword)
-	screenWords.erase(nodeword)
-	node.queue_free()
-	objects.remove(index)
-	checkHealth()
+	if index != -1:
+		screenWords.erase(nodeword)
+		node.queue_free()
+		objects.remove(index)
+		asteroids.erase(node)
+		checkHealth()
 
-func _on_SideArea_area_shape_entered(area_id, area, area_shape, self_shape):
-	print("collision")
+func _on_SideArea_area_shape_entered(_area_id, area, _area_shape, _self_shape):
 	var node = area.get_parent()
 	var nodeword = node.get_node("Control/Text").text
 	var index = screenWords.find(nodeword)
 	screenWords.erase(nodeword)
 	node.queue_free()
 	objects.remove(index)
+
+#scene changes
+func _on_Back_pressed():
+	get_tree().change_scene("res://ArcadeSelect.tscn")
+
+func _on_Customize_pressed():
+	Global.prevScene = "res://AstroWords.tscn"
+	get_tree().change_scene("res://ArcadeCustomize.tscn")
+
+#for debug use
+func _on_Button_pressed():
+	health -= 21
+	checkHealth()
+
+func _on_Button2_pressed():
+	health += 21
+	checkHealth()
