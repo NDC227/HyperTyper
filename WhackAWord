@@ -1,8 +1,8 @@
 extends Node
 
-# Declare member variables here. Examples:
 var file = Global.WAWfile
 var nodes
+var anodes
 var openNodes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 var nodeWords = ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]
 var nodeTimes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -14,53 +14,95 @@ var time = 20
 var surviveTime = 0
 var score = 0
 var count = 0
+var dialog = []
 
-# Called when the node enters the scene tree for the first time.
+signal toDialog
+
 func _ready():
-	randomize()
-	$Timer.wait_time = Global.WAWspeed
 	load_file()
+	#runs on first time to show dialogue
+	if "WAW" in Global.tutorialChecks:
+		dialog = Global.tutorialText[5]
+		emit_signal("toDialog")
+		$DialogueBox.show()
+		get_tree().paused = true
+		$DialogueBox/Timer.start()
+		var save_game = File.new()
+		save_game.open("user://tutorial.save", File.READ_WRITE)
+		var save_nodes = get_tree().get_nodes_in_group("save")
+		for node in save_nodes:
+			var node_data = ""
+			save_game.seek(17)
+			save_game.store_line("   ")
+		save_game.close()
+		Global.tutorialChecks.erase("WAW")
+		
+		#creates the custom list directory
+		var file = File.new()
+		file.open("user://DefaultList.save", File.WRITE_READ)
+		for word in words:
+			file.store_line(word)
+		file.close()
+		file.open("user://CustomLists.save", File.WRITE)
+		file.store_line("user://DefaultList")
+		file.close()
+	randomize() #true random
+	#sets up rest of scene
+	$Timer.wait_time = Global.WAWspeed
 	$WAWUI/Control/Back.connect("pressed", self, "_on_Back_pressed")
-	$WAWResults/Control/TryAgain.connect("pressed", self, "resetGame")
+	$ArcadeResults/Control/TryAgain.connect("pressed", self, "resetGame")
 	nodes = [$WAWBoard/Control/Row1/Box1, $WAWBoard/Control/Row1/Box2, $WAWBoard/Control/Row1/Box3, $WAWBoard/Control/Row1/Box4,
 $WAWBoard/Control/Row2/Box5, $WAWBoard/Control/Row2/Box6, $WAWBoard/Control/Row2/Box7, $WAWBoard/Control/Row2/Box8, 
 $WAWBoard/Control/Row3/Box9, $WAWBoard/Control/Row3/Box10, $WAWBoard/Control/Row3/Box11, $WAWBoard/Control/Row3/Box12,
 $WAWBoard/Control/Row4/Box13, $WAWBoard/Control/Row4/Box14, $WAWBoard/Control/Row4/Box15, $WAWBoard/Control/Row4/Box16]
+	anodes = [$WAWBoard/ABoxes/ABox1, $WAWBoard/ABoxes/ABox2, $WAWBoard/ABoxes/ABox3, $WAWBoard/ABoxes/ABox4, 
+$WAWBoard/ABoxes/ABox5, $WAWBoard/ABoxes/ABox6, $WAWBoard/ABoxes/ABox7, $WAWBoard/ABoxes/ABox8, 
+$WAWBoard/ABoxes/ABox9, $WAWBoard/ABoxes/ABox10, $WAWBoard/ABoxes/ABox11, $WAWBoard/ABoxes/ABox12, 
+$WAWBoard/ABoxes/ABox13, $WAWBoard/ABoxes/ABox14, $WAWBoard/ABoxes/ABox15, $WAWBoard/ABoxes/ABox16]
 	resetGame()
-	
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
 
+#sets up word list
 func load_file():
 	var f = File.new()
 	f.open(file, File.READ)
-	while not f.eof_reached(): # iterate through all lines until the end of file is reached
+	while not f.eof_reached():
 		var line = f.get_line()
 		words.append(line)
 	f.close()
 	return
 
-func _on_Back_pressed():
-	get_tree().change_scene("res://ArcadeSelect.tscn")
+#starts game
+func _on_Quarter_pressed():
+	$Control/Input.show()
+	$Control/Input.grab_focus()
+	$Control/Quarter.disabled = true
 
+#processes the rest of the start of the game, prompted by above function
+func _on_Input_focus_entered():
+	$WAWUI/Machine.texture = load("res://Assets/WhackAWord/WAWMachine.png")
+	$WAWUI/Machine.position.x = 531
+	$Control/Input.text = ""
+	$Timer.start()
+	$SecondTimer.start()
+
+#spawns words at the given rate
 func _on_Timer_timeout():
-	print (openNodes)
-	print(score)
-	if openNodes == []:
-		endGame()
-	else:
-		var index = openNodes[randi() % openNodes.size()]
-		var node = nodes[index]
-		var rand = int(rand_range(0, words.size()))
-		nodeTimes[index] = 4
-		var word = words[rand]
-#		if word.length() >= 10:
-#			node.get("custom_fonts/normal_font").set_size(12)
-		node.set_bbcode("[center]%s[/center]" %word)
-		nodeWords[index] = words[rand]
-		openNodes.erase(index)
+	var index = openNodes[randi() % openNodes.size()]
+	var node = nodes[index]
+	var rand = int(rand_range(0, words.size()))
+	nodeTimes[index] = 4
+	var word = words[rand]
+#	if word.length() >= 10:
+#		node.get("custom_fonts/normal_font").set_size(12)
+	node.set_bbcode("[center]%s[/center]" %word)
+	nodeWords[index] = words[rand]
+	openNodes.erase(index)
+	var anode = anodes[index]
+	anode.show()
+	anode.set_frame(0)
+	anode.play()
 
+#keeps track of time
 func _on_SecondTimer_timeout():
 	for i in range (0, nodeTimes.size()):
 		if nodeTimes[i] > 0:
@@ -70,28 +112,25 @@ func _on_SecondTimer_timeout():
 				nodes[i].set_bbcode("[center]-[/center]")
 				nodes[i].get("custom_fonts/normal_font").set_size(13)
 				openNodes.append(i)
+				anodes[i].hide()
 	time -= 1
 	surviveTime += 1
 	$WAWUI/Control/Time.text = str(int(time))
 	if time <= 0:
 		endGame()
 
+#timer so that two seconds elapse before results are shown
 func _on_EndTimer_timeout():
 	count += 1
 	if count == 2:
-		$WAWResults/Control/Score.text = str(score)
-		$WAWResults/Control/Time.text = str(surviveTime)
-		$WAWResults.show()
+		$ArcadeResults/Control/Score.text = str(score)
+		$ArcadeResults/Control/Time.text = str(surviveTime)
+		$ArcadeResults.show()
 
-func _on_Input_focus_entered():
-	$WAWUI/Machine.texture = load("res://Assets/WhackAWord/WAWMachine.png")
-	$WAWUI/Machine.position.x = 531
-	$Control/Input.text = ""
-	$Timer.start()
-	$SecondTimer.start()
-
+#process user input
 func _on_Input_text_changed():
 	input = $Control/Input.text
+	#checks for matches and adjusts score, speed, etc.
 	if input in nodeWords:
 		var index = nodeWords.find(input)
 		time += 0.2 * nodeWords[index].length()
@@ -102,17 +141,19 @@ func _on_Input_text_changed():
 		nodes[index].get("custom_fonts/normal_font").set_size(13)
 		nodes[index].set_bbcode("[center]-[/center]")
 		input = ""
+		anodes[index].hide()
 		$Control/Input.text = ""
 		$WAWUI/Control/Time.text = str(int(time))
 		$WAWUI/Control/Score.text = str(score)
 		checkSpeed()
-#	print(input)
 		
+#speeds up the rate of word spawning every 100 increase in score
 func checkSpeed():
 	if score > speedRate * Global.WAWspeed * 100:
 		$Timer.wait_time = Global.WAWspeed * pow(0.95, speedRate)
 		speedRate += 1
 
+#ends the game
 func endGame():
 	$Timer.stop()
 	$SecondTimer.stop()
@@ -120,9 +161,10 @@ func endGame():
 	count = 0
 	$EndTimer.start()
 	
+#resets the game
 func resetGame():
 	$EndTimer.stop()
-	$WAWResults.hide()
+	$ArcadeResults.hide()
 	$WAWUI/Machine.texture = load("res://Assets/WhackAWord/WAWMachineOff.png")
 	$WAWUI/Machine.position.x = 512
 	$Control/Quarter.disabled = false
@@ -140,11 +182,12 @@ func resetGame():
 	$WAWUI/Control/Score.text = "0"
 	for node in nodes:
 		node.set_bbcode("[center]-[/center]")
-
-func _on_Quarter_pressed():
-	$Control/Input.show()
-	$Control/Input.grab_focus()
-	$Control/Quarter.disabled = true
+	for anode in anodes:
+		anode.hide()
+	
+#scene changes
+func _on_Back_pressed():
+	get_tree().change_scene("res://ArcadeSelect.tscn")
 
 func _on_Customize_pressed():
 	Global.prevScene = "res://WhackAWord.tscn"
