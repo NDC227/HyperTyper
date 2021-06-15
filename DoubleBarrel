@@ -1,0 +1,11 @@
+extends Node2D
+
+func _ready():
+	pass
+
+#for other scene to check if asteroid is double barrel
+func doubleBarrel():
+	pass
+
+func _on_Object_animation_finished():
+	queue_free()
